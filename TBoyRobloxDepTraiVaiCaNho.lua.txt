@@ -4023,6 +4023,53 @@ v68:Toggle("Auto Dough King Hop", _G.doughkingHop, function(v398)
 	_G.doughkingHop = v398;
 end);
 spawn(function()
+local JobId, TS
+local function scrapeAPI()
+    local success, response = pcall(function()
+            return request({
+            Url = "https://hostserver.porry.store/bloxfruit/bot/JobId/doughking",
+            Method = "GET"
+        })
+    end)
+
+    if success and response.Success then
+        local data = game.HttpService:JSONDecode(response.Body)
+
+        if data.Amount and data.Amount > 0 then
+            local jobIds = {}
+
+            for _, job in ipairs(data.JobId) do
+                for jobId, _ in pairs(job) do
+                    table.insert(jobIds, jobId)
+                end
+            end
+            
+            TS = tick()
+            return jobIds
+        end
+    end
+    
+    return "Failed"
+end
+local ChoosenID
+local jobIds = scrapeAPI()
+
+  if tick() - TS > 100 then
+            jobIds = scrapeAPI()
+            if jobIds == "Failed" then
+                return Window:Notify({
+                    Title = Window.Settings.Title,
+                    Description = "Failed to scrape API.",
+                    Lifetime = 5
+                })
+            end
+        end
+spawn(function()
+            for _, jobId in ipairs(jobIds) do
+                game:GetService("ReplicatedStorage").__ServerBrowser:InvokeServer("teleport", jobId)
+                wait(5)
+           end
+           end)
 	while wait() do
 		if (_G.doughking and World3) then
 			pcall(function()
